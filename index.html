@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アイラ特製・Notion用埋め込みジェネレーター</title>
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <title>アイラ特製・Notion用埋め込みジェネレーター（シンプル版）</title>
     <style>
         body { font-family: sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f4f8; }
         #ui-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 400px; }
@@ -14,53 +13,44 @@
         #result { margin-top: 20px; text-align: left; }
         .result-url { width: 100%; padding: 10px; box-sizing: border-box; background: #e8f0fe; border: 1px solid #b6cff5; border-radius: 4px; margin-bottom: 10px; }
         
+        /* Notionでの表示用 */
         body.embed-mode { display: block; background-color: transparent; height: auto; }
-        #widget-container { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
     <div id="ui-container">
-        <h2 style="margin-top:0;">Xウィジェット発行機改</h2>
-        <p style="font-size:14px; color:#555;">XのアカウントURL、またはIDを入力してください。</p>
-        <input type="text" id="twitter-input" placeholder="例: TwitterJP">
+        <h2 style="margin-top:0;">Xウィジェット発行機（シンプル版）</h2>
+        <p style="font-size:14px; color:#555;">XのIDを入力してください。</p>
+        <input type="text" id="twitter-input" placeholder="例: kannkannna">
         <button onclick="generateNotionURL()">Notion用URLを発行</button>
         <div id="result"></div>
     </div>
-
-    <div id="widget-container" style="display: none;"></div>
 
     <script>
         const params = new URLSearchParams(window.location.search);
         const targetId = params.get('id');
 
+        // URLに "?id=xxx" がある場合（Notion上で読み込まれた場合）の処理
         if (targetId) {
             document.getElementById('ui-container').style.display = 'none';
             document.body.classList.add('embed-mode');
-            const widgetContainer = document.getElementById('widget-container');
-            widgetContainer.style.display = 'block';
             
-            // XのAPIを使って強制的にタイムラインを構築させます！
-            function renderTimeline() {
-                if (window.twttr && window.twttr.widgets) {
-                    window.twttr.widgets.createTimeline(
-                        { sourceType: "profile", screenName: targetId },
-                        widgetContainer,
-                        { theme: "light" }
-                    ).then(function (el) {
-                        if (!el) {
-                            // それでもダメな場合のエラーメッセージ
-                            widgetContainer.innerHTML = '<p style="color:red; padding:10px; font-size:12px;">【エラー】X側の仕様制限、またはブラウザの広告ブロッカー/トラッキング防止機能により読み込めませんでした。</p>';
-                        }
-                    });
-                } else {
-                    // スクリプトの読み込みが遅い場合は少し待ってから再挑戦します
-                    setTimeout(renderTimeline, 100);
-                }
-            }
-            renderTimeline();
+            // あなたの提案したタグを、そのまま忠実にDOMとして生成します！
+            const aTag = document.createElement('a');
+            aTag.className = 'twitter-timeline';
+            aTag.href = `https://twitter.com/${targetId}?ref_src=twsrc%5Etfw`;
+            aTag.innerText = `Tweets by ${targetId}`;
+            document.body.appendChild(aTag);
+
+            const scriptTag = document.createElement('script');
+            scriptTag.async = true;
+            scriptTag.src = "https://platform.twitter.com/widgets.js";
+            scriptTag.charset = "utf-8";
+            document.body.appendChild(scriptTag);
         }
 
+        // 発行ボタンの処理
         function generateNotionURL() {
             let inputVal = document.getElementById('twitter-input').value.trim();
             if (!inputVal) return;
@@ -73,7 +63,8 @@
             const embedUrl = `${baseUrl}?id=${inputVal}`;
             
             document.getElementById('result').innerHTML = `
-                <input type="text" class="result-url" value="${embedUrl}" id="copy-target" readonly>
+                <p style="font-weight:bold; margin-bottom:5px;">✅ 発行完了！</p>
+                <input type="text" class="result-url" value="${embedUrl}" readonly onclick="this.select()">
             `;
         }
     </script>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アイラ特製・Notion用埋め込みジェネレーター</title>
+    <style>
+        /* エリートなUIデザインのためのCSSです */
+        body { font-family: sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f4f8; }
+        #ui-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 400px; }
+        input[type="text"] { padding: 12px; width: 90%; margin-bottom: 15px; border: 2px solid #ccc; border-radius: 6px; font-size: 16px; }
+        button { padding: 12px 24px; background-color: #1da1f2; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background-color: #0c85d0; }
+        #result { margin-top: 20px; text-align: left; }
+        .result-url { width: 100%; padding: 10px; box-sizing: border-box; background: #e8f0fe; border: 1px solid #b6cff5; border-radius: 4px; margin-bottom: 10px; }
+        
+        /* 埋め込みモード時のスタイル（Notion上での表示用） */
+        body.embed-mode { display: block; background-color: transparent; height: auto; }
+        .twitter-timeline { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <h2 style="margin-top:0;">Xウィジェット発行機</h2>
+        <p style="font-size:14px; color:#555;">X（旧Twitter）のアカウントURL、またはID（@以降）を入力してください。</p>
+        <input type="text" id="twitter-input" placeholder="例: https://x.com/TwitterJP または TwitterJP">
+        <button onclick="generateNotionURL()">Notion用URLを発行</button>
+        <div id="result"></div>
+    </div>
+
+    <div id="widget-container" style="display: none;"></div>
+
+    <script>
+        // URLの末尾（?id=xxx）を読み取るエリートな処理
+        const params = new URLSearchParams(window.location.search);
+        const targetId = params.get('id');
+
+        if (targetId) {
+            // Notion上で読み込まれた場合：ジェネレーター画面を隠してタイムラインを表示！
+            document.getElementById('ui-container').style.display = 'none';
+            document.body.classList.add('embed-mode');
+
+            const widgetContainer = document.getElementById('widget-container');
+            widgetContainer.style.display = 'block';
+            
+            // 動的にHTMLタグを生成
+            const a = document.createElement('a');
+            a.className = 'twitter-timeline';
+            a.setAttribute('data-theme', 'light');
+            a.href = `https://twitter.com/${targetId}?ref_src=twsrc%5Etfw`;
+            a.innerText = `Tweets by ${targetId}`;
+            widgetContainer.appendChild(a);
+
+            // Xの公式スクリプトを呼び出し
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = "https://platform.twitter.com/widgets.js";
+            script.charset = "utf-8";
+            document.body.appendChild(script);
+        }
+
+        // 発行ボタンを押したときの処理
+        function generateNotionURL() {
+            let inputVal = document.getElementById('twitter-input').value.trim();
+            
+            if (!inputVal) {
+                alert('URLかIDを入力してくださいね！');
+                return;
+            }
+
+            // URLで入力されても、ID部分だけを賢く抜き出します
+            if(inputVal.includes('twitter.com/') || inputVal.includes('x.com/')) {
+                inputVal = inputVal.split('/').pop().split('?')[0];
+            }
+            inputVal = inputVal.replace('@', ''); // @がついていたら消去
+
+            // 現在のページのURLに "?id=xxx" をくっつけて専用URLを完成させる
+            const baseUrl = window.location.origin + window.location.pathname;
+            const embedUrl = `${baseUrl}?id=${inputVal}`;
+            
+            // 結果を表示
+            document.getElementById('result').innerHTML = `
+                <p style="font-weight:bold; margin-bottom:5px;">✅ 発行完了！以下のURLをNotionに埋め込んでください</p>
+                <input type="text" class="result-url" value="${embedUrl}" id="copy-target" readonly>
+                <button onclick="copyToClipboard()" style="background-color: #333; width:100%;">クリップボードにコピー</button>
+            `;
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById('copy-target');
+            copyText.select();
+            document.execCommand("copy");
+            alert("完璧にコピーしました！あとはNotionに貼り付けるだけです！");
+        }
+    </script>
+</body>
+</html>
